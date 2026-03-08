@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vehicle Counter — Sacha Laprévote</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f8f8f6;
+    --white: #ffffff;
+    --border: #e4e4e0;
+    --accent: #2563eb;
+    --text: #1a1a1a;
+    --muted: #888884;
+    --tag-bg: #eef2ff;
+    --tag-text: #2563eb;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* NAV */
+  nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    position: sticky; top: 0; z-index: 100;
+  }
+  nav .inner {
+    max-width: 860px; margin: 0 auto; padding: 16px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav-name { font-weight: 600; font-size: 15px; }
+  .nav-name span { color: var(--accent); }
+  .nav-links { display: flex; gap: 24px; list-style: none; }
+  .nav-links a { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+  .nav-links a:hover { color: var(--text); }
+
+  /* HERO */
+  .hero { padding: 72px 0 56px; border-bottom: 1px solid var(--border); }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--accent); font-weight: 500;
+    margin-bottom: 20px; font-family: var(--mono);
+  }
+  .hero-eyebrow::before { content: ''; display: block; width: 20px; height: 2px; background: var(--accent); }
+  h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 16px; }
+  .hero-desc { font-size: 17px; color: var(--muted); max-width: 540px; line-height: 1.7; margin-bottom: 32px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { font-family: var(--mono); font-size: 12px; font-weight: 500; background: var(--tag-bg); color: var(--tag-text); padding: 4px 10px; border-radius: 4px; }
+  .tag.dark { background: var(--text); color: var(--white); }
+
+  /* SECTION HELPERS */
+  .section-label { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 24px; }
+  h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 32px; }
+
+  /* DEMO */
+  .demo-section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  .demo-grid { display: grid; grid-template-columns: 1fr 260px; gap: 20px; align-items: start; }
+  .cam-box { background: #111; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; position: relative; }
+  .cam-box canvas { width: 100%; height: 100%; display: block; }
+  .cam-badge {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+    border-radius: 4px; padding: 4px 10px;
+    font-family: var(--mono); font-size: 11px; color: #fff;
+  }
+  .live-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; animation: blink 1.2s ease-in-out infinite; }
+  .stats-col { display: flex; flex-direction: column; gap: 12px; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .stat-card-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-card-value { font-family: var(--mono); font-size: 2.4rem; font-weight: 500; color: var(--accent); line-height: 1; }
+  .stat-rows { display: flex; flex-direction: column; }
+  .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .k { color: var(--muted); }
+  .stat-row .v { font-family: var(--mono); font-weight: 500; }
+
+  /* HOW */
+  .how-section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .step { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+  .step-num { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 500; margin-bottom: 12px; }
+  .step-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* CODE */
+  .code-section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  .code-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tab { font-family: var(--mono); font-size: 12px; padding: 10px 18px; cursor: pointer; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; transition: all 0.15s; margin-bottom: -1px; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text); }
+  .code-block { background: #1e1e2e; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; position: relative; }
+  .code-block pre { font-family: var(--mono); font-size: 13px; line-height: 1.75; color: #cdd6f4; padding: 24px; overflow-x: auto; max-height: 280px; }
+  .kw { color: #cba6f7; } .fn { color: #89b4fa; } .str { color: #a6e3a1; } .cm { color: #585b70; } .num { color: #fab387; }
+  .copy-btn { position: absolute; top: 12px; right: 12px; font-family: var(--mono); font-size: 11px; color: #585b70; background: #2a2a3e; border: 1px solid #3a3a4e; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+  .copy-btn:hover { color: #cdd6f4; border-color: #585b70; }
+
+  /* STACK */
+  .stack-section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  .stack-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stack-item { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 20px 16px; text-align: center; }
+  .stack-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .stack-role { font-size: 12px; color: var(--muted); }
+
+  /* FOOTER */
+  footer { padding: 40px 0; }
+  .footer-inner { max-width: 860px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .footer-name { font-weight: 600; font-size: 15px; }
+  .footer-contact { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+  .footer-contact a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.15s; font-family: var(--mono); }
+  .footer-contact a:hover { color: var(--accent); }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  @media (max-width: 720px) {
+    .demo-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <span class="nav-name">Sacha <span>Laprévote</span></span>
+    <ul class="nav-links">
+      <li><a href="#demo">Demo</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">Computer Vision · Python Project</div>
+    <h1>Real-time Vehicle Counter</h1>
+    <p class="hero-desc">A traffic analysis system that detects and counts vehicles from a video feed using YOLO v4 and OpenCV. Built from scratch — detection, tracking, and counting.</p>
+    <div class="tags">
+      <span class="tag dark">Python</span>
+      <span class="tag">OpenCV</span>
+      <span class="tag">YOLO v4</span>
+      <span class="tag">NumPy</span>
+      <span class="tag">Computer Vision</span>
+    </div>
+  </section>
+
+  <section class="demo-section" id="demo">
+    <div class="section-label">Live simulation</div>
+    <div class="demo-grid">
+      <div class="cam-box">
+        <canvas id="simCanvas"></canvas>
+        <div class="cam-badge"><div class="live-dot"></div>CAM_01 — LIVE</div>
+      </div>
+      <div class="stats-col">
+        <div class="stat-card">
+          <div class="stat-card-label">Total count</div>
+          <div class="stat-card-value" id="bigCount">000</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">By type</div>
+          <div class="stat-rows">
+            <div class="stat-row"><span class="k">Cars</span><span class="v" id="statCars">0</span></div>
+            <div class="stat-row"><span class="k">Trucks</span><span class="v" id="statTrucks">0</span></div>
+            <div class="stat-row"><span class="k">Buses</span><span class="v" id="statBuses">0</span></div>
+            <div class="stat-row"><span class="k">Motos</span><span class="v" id="statMotos">0</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-section" id="how">
+    <div class="section-label">Process</div>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01 — Detection</div>
+        <div class="step-title">YOLO v4</div>
+        <div class="step-desc">Each frame is resized to 416×416 and fed into YOLO. The network returns bounding boxes, class IDs, and confidence scores. NMS removes duplicate boxes.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02 — Tracking</div>
+        <div class="step-title">Euclidean Distance</div>
+        <div class="step-desc">Each vehicle is identified by its center point. Between frames, we compute the distance — if it's under 50px, it's the same vehicle and keeps its ID.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03 — Counting</div>
+        <div class="step-title">Virtual Line</div>
+        <div class="step-desc">A horizontal line crosses the frame. When a tracked vehicle crosses it, it's added to the counter once — a set of counted IDs prevents duplicates.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="code-section" id="code">
+    <div class="section-label">Source</div>
+    <h2>Code</h2>
+    <div class="code-tabs">
+      <button class="tab active" onclick="showTab('detect',this)">object_detection.py</button>
+      <button class="tab" onclick="showTab('main',this)">main.py</button>
+    </div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode()">Copy</button>
+      <pre id="codeDetect"><span class="kw">import</span> cv2
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">class</span> <span class="fn">ObjectDetection</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.confThreshold = <span class="num">0.5</span>   <span class="cm"># 50% confidence minimum</span>
+        self.nmsThreshold  = <span class="num">0.4</span>   <span class="cm"># suppress duplicate boxes</span>
+        self.model = cv2.dnn.<span class="fn">readNet</span>(<span class="str">"yolov4.weights"</span>, <span class="str">"yolov4.cfg"</span>)
+        <span class="kw">with</span> <span class="fn">open</span>(<span class="str">"coco.names"</span>) <span class="kw">as</span> f:
+            self.classes = f.read().<span class="fn">strip</span>().<span class="fn">split</span>(<span class="str">"\n"</span>)
+        layer_names = self.model.<span class="fn">getLayerNames</span>()
+        self.output_layers = [
+            layer_names[i - <span class="num">1</span>]
+            <span class="kw">for</span> i <span class="kw">in</span> self.model.<span class="fn">getUnconnectedOutLayers</span>()
+        ]
+
+    <span class="kw">def</span> <span class="fn">detect</span>(self, frame):
+        blob = cv2.dnn.<span class="fn">blobFromImage</span>(frame, <span class="num">1/255</span>, (<span class="num">416</span>,<span class="num">416</span>), swapRB=<span class="kw">True</span>)
+        self.model.<span class="fn">setInput</span>(blob)
+        outputs = self.model.<span class="fn">forward</span>(self.output_layers)
+        <span class="cm"># ... parse outputs, apply NMS, return boxes</span></pre>
+      <pre id="codeMain" style="display:none"><span class="kw">from</span> object_detection <span class="kw">import</span> ObjectDetection
+<span class="kw">import</span> cv2, math
+
+od  = <span class="fn">ObjectDetection</span>()
+cap = cv2.<span class="fn">VideoCapture</span>(<span class="str">"traffic.mp4"</span>)
+COUNTING_LINE_Y = <span class="num">400</span>
+tracking_objects, counted_ids = {}, <span class="fn">set</span>()
+count = <span class="num">0</span>
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    ret, frame = cap.<span class="fn">read</span>()
+    <span class="kw">if not</span> ret: <span class="kw">break</span>
+
+    class_ids, scores, boxes = od.<span class="fn">detect</span>(frame)
+
+    <span class="cm"># Track by Euclidean distance between frames</span>
+    <span class="kw">for</span> obj_id, (cx, cy) <span class="kw">in</span> tracking_objects.<span class="fn">items</span>():
+        <span class="kw">if</span> <span class="fn">abs</span>(cy - COUNTING_LINE_Y) &lt; <span class="num">10</span> <span class="kw">and</span> obj_id <span class="kw">not in</span> counted_ids:
+            count += <span class="num">1</span>
+            counted_ids.<span class="fn">add</span>(obj_id)</pre>
+    </div>
+  </section>
+
+  <section class="stack-section">
+    <div class="section-label">Built with</div>
+    <h2>Tech stack</h2>
+    <div class="stack-grid">
+      <div class="stack-item"><div class="stack-name">Python 3.10</div><div class="stack-role">Core language</div></div>
+      <div class="stack-item"><div class="stack-name">OpenCV</div><div class="stack-role">Video I/O + DNN</div></div>
+      <div class="stack-item"><div class="stack-name">YOLO v4</div><div class="stack-role">Object detection</div></div>
+      <div class="stack-item"><div class="stack-name">NumPy</div><div class="stack-role">Matrix ops + NMS</div></div>
+    </div>
+  </section>
+
+</div>
+
+<footer id="contact">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-name">Sacha Laprévote</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">Python · Computer Vision</div>
+    </div>
+    <div class="footer-contact">
+      <a href="/cdn-cgi/l/email-protection#483b292b2029662429383a2d3e273c2d08212b24273d2c662b2725"><span class="__cf_email__" data-cfemail="196a787a7178377578696b7c6f766d7c59707a75766c7d377a7674">[email&#160;protected]</span></a>
+      <a href="tel:+33614227104">+33 06 14 22 71 04</a>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const parent = canvas.parentElement;
+  const w = parent.offsetWidth || 600;
+  canvas.width  = w;
+  canvas.height = Math.round(w * 9 / 16);
+}
+
+window.addEventListener('load', resize);
+window.addEventListener('resize', () => { resize(); });
+
+const COLORS = { car:'#2563eb', truck:'#ef4444', bus:'#f59e0b', moto:'#10b981' };
+const TYPES  = ['car','car','car','car','truck','truck','bus','moto'];
+const LINE_RATIO = 0.55;
+
+let vehicles = [], totalCount = 0, frame = 0;
+let stats = { car:0, truck:0, bus:0, moto:0 };
+const bigCountEl = document.getElementById('bigCount');
+const statEls = { car: document.getElementById('statCars'), truck: document.getElementById('statTrucks'), bus: document.getElementById('statBuses'), moto: document.getElementById('statMotos') };
+
+function spawn() {
+  const type = TYPES[Math.floor(Math.random()*TYPES.length)];
+  const sizes = { car:[52,22], truck:[70,26], bus:[65,28], moto:[30,16] };
+  const [w,h] = sizes[type];
+  vehicles.push({
+    x: -w - 10,
+    y: canvas.height * (0.2 + Math.random() * 0.55),
+    w, h, type,
+    speed: 1.5 + Math.random() * 2,
+    id: Math.floor(Math.random()*9000)+1000,
+    counted: false,
+    color: COLORS[type]
+  });
+}
+
+function draw() {
+  frame++;
+  const W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#111827'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#1f2937'; ctx.fillRect(0,H*0.1,W,H*0.8);
+
+  // Lane dashes
+  ctx.setLineDash([28,18]); ctx.strokeStyle='#374151'; ctx.lineWidth=1.5;
+  for(let i=1;i<3;i++){
+    ctx.beginPath();
+    ctx.moveTo(0, H*(0.1+i*0.8/3));
+    ctx.lineTo(W, H*(0.1+i*0.8/3));
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Vertical counting line
+  const lineX = W * LINE_RATIO;
+  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=2; ctx.setLineDash([6,5]);
+  ctx.beginPath(); ctx.moveTo(lineX, H*0.1); ctx.lineTo(lineX, H*0.9); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  ctx.font=`${Math.max(9, Math.floor(W*0.012))}px monospace`;
+  ctx.fillText('count', lineX+6, H*0.15);
+
+  // Spawn logic
+  if(frame % 70 === 0 && vehicles.length < 7) spawn();
+
+  // Draw vehicles
+  vehicles.forEach(v => {
+    v.x += v.speed * (W / 800);
+    const cx = v.x + v.w / 2;
+
+    // Count when crossing the line
+    if(!v.counted && cx >= lineX && cx - v.speed*(W/800) < lineX) {
+      v.counted = true;
+      totalCount++;
+      stats[v.type]++;
+      bigCountEl.textContent = String(totalCount).padStart(3,'0');
+      statEls[v.type].textContent = stats[v.type];
+    }
+
+    const alpha = Math.min(1, (v.x + v.w) / 50);
+    ctx.globalAlpha = alpha;
+
+    ctx.fillStyle = '#2d3748'; ctx.fillRect(v.x, v.y, v.w, v.h);
+    ctx.strokeStyle = v.color; ctx.lineWidth = 1.5; ctx.strokeRect(v.x, v.y, v.w, v.h);
+    ctx.fillStyle = v.color;
+    ctx.beginPath(); ctx.arc(cx, v.y+v.h/2, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `${Math.max(8, Math.floor(W*0.011))}px monospace`;
+    ctx.fillText(`${v.type} #${v.id}`, v.x, v.y - 4);
+    ctx.globalAlpha = 1;
+  });
+
+  vehicles = vehicles.filter(v => v.x < W + 100);
+  requestAnimationFrame(draw);
+}
+
+window.addEventListener('load', () => {
+  resize();
+  setTimeout(() => { spawn(); spawn(); draw(); }, 100);
+});
+
+function showTab(name,btn){
+  document.getElementById('codeDetect').style.display=name==='detect'?'block':'none';
+  document.getElementById('codeMain').style.display=name==='main'?'block':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function copyCode(){
+  const id=document.getElementById('codeMain').style.display!=='none'?'code
